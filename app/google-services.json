@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "886034960373",
+    "firebase_url": "https://usernameavailabilitychecker.firebaseio.com",
+    "project_id": "usernameavailabilitychecker",
+    "storage_bucket": "usernameavailabilitychecker.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:886034960373:android:605e46b422635aa1ab5abc",
+        "android_client_info": {
+          "package_name": "com.pickurapps.usernameavailabilitychecker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "886034960373-gm4au8dr97q3l5dmrsesn80dnh0iu80v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6cGckHN10u7mDyOQMvCi9OCDgoHBjdJA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "886034960373-gm4au8dr97q3l5dmrsesn80dnh0iu80v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,13 +1,9 @@
 package com.pickurapps.usernameavailabilitychecker;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -15,6 +11,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
 import com.google.android.material.textfield.TextInputEditText;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
@@ -28,22 +32,50 @@ import cz.msebera.android.httpclient.Header;
 
 public class MainActivity extends AppCompatActivity {
 
+    private AdView mAdView;
+    private InterstitialAd mInterstitialAd;
     List<Website> mWebsiteList;
     private final String FACEBOOK_BASE_URL = "https://username-availability.herokuapp.com/check/facebook/";
     private final String INSTAGRAM_BASE_URL = "https://username-availability.herokuapp.com/check/instagram/";
     private final String TWITTER_BASE_URL = "https://username-availability.herokuapp.com/check/twitter/";
-    //private final String YOUTUBE_BASE_URL = "https://username-availability.herokuapp.com/check/youtube/";
     private final String PINTEREST_BASE_URL = "https://username-availability.herokuapp.com/check/pinterest/";
-    //private final String SPOTIFY_BASE_URL = "https://username-availability.herokuapp.com/check/spotify/";
-    //private final String REDDIT_BASE_URL = "https://username-availability.herokuapp.com/check/reddit/";
     private final String GITHUB_BASE_URL = "https://username-availability.herokuapp.com/check/github/";
-    //private final String EBAY_BASE_URL = "https://username-availability.herokuapp.com/check/ebay/";
     private final String BEHANCE_BASE_URL = "https://username-availability.herokuapp.com/check/behance/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mAdView = findViewById(R.id.adView);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        mAdView.loadAd(adRequest);
+
+        mInterstitialAd = new InterstitialAd(this);
+        mInterstitialAd.setAdUnitId("ca-app-pub-6185803298667574/6899404241");
+        mInterstitialAd.loadAd(new AdRequest.Builder().build());
+
+        mInterstitialAd.setAdListener(new AdListener() {
+
+            @Override
+            public void onAdClosed() {
+                // Code to be executed when the interstitial ad is closed.
+                mInterstitialAd.loadAd(new AdRequest.Builder().build());
+            }
+        });
+
+        mWebsiteList = new ArrayList<>();
+        mWebsiteList.add(new Website("Facebook", R.drawable.ic_facebook, Color.parseColor("#3b5998")));
+        mWebsiteList.add(new Website("Instagram", R.drawable.ic_instagram, Color.parseColor("#ffdc80")));
+        mWebsiteList.add(new Website("Twitter", R.drawable.ic_twitter, Color.parseColor("#1da1f2")));
+        mWebsiteList.add(new Website("Pinterest", R.drawable.ic_pinterest, Color.parseColor("#bd081c")));
+        mWebsiteList.add(new Website("Github", R.drawable.ic_github, Color.parseColor("#c9510c")));
+        mWebsiteList.add(new Website("Behance", R.drawable.ic_behance, Color.parseColor("#1769ff")));
+
+        RecyclerView recyclerView = findViewById(R.id.recyclerview_id);
+        final RecyclerViewAdapter recyclerViewAdapter = new RecyclerViewAdapter(this, mWebsiteList);
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
+        recyclerView.setAdapter(recyclerViewAdapter);
 
         final TextInputEditText textInputEditText = findViewById(R.id.textInputEditText);
         textInputEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -53,17 +85,17 @@ public class MainActivity extends AppCompatActivity {
                     String editTextString = textInputEditText.getText().toString();
                     if (editTextString != null && editTextString.length() > 0){
                         String facebookFinalUrl = FACEBOOK_BASE_URL + editTextString;
-                        requestingJsonFromApi(facebookFinalUrl);
+                        requestingJsonFromApi(facebookFinalUrl, false, mWebsiteList.get(0), recyclerViewAdapter);
                         String instagramFinalUrl = INSTAGRAM_BASE_URL + editTextString;
-                        requestingJsonFromApi(instagramFinalUrl);
+                        requestingJsonFromApi(instagramFinalUrl, false, mWebsiteList.get(1), recyclerViewAdapter);
                         String twitterFinalUrl = TWITTER_BASE_URL + editTextString;
-                        requestingJsonFromApi(twitterFinalUrl);
+                        requestingJsonFromApi(twitterFinalUrl, false, mWebsiteList.get(2), recyclerViewAdapter);
                         String pinterestFinalUrl = PINTEREST_BASE_URL + editTextString;
-                        requestingJsonFromApi(pinterestFinalUrl);
+                        requestingJsonFromApi(pinterestFinalUrl, true, mWebsiteList.get(3), recyclerViewAdapter);
                         String githubFinalUrl = GITHUB_BASE_URL + editTextString;
-                        requestingJsonFromApi(githubFinalUrl);
+                        requestingJsonFromApi(githubFinalUrl, false, mWebsiteList.get(4), recyclerViewAdapter);
                         String behanceFinalUrl = BEHANCE_BASE_URL + editTextString;
-                        requestingJsonFromApi(behanceFinalUrl);
+                        requestingJsonFromApi(behanceFinalUrl, false, mWebsiteList.get(5), recyclerViewAdapter);
                     }
                     LinearLayout rootLayout = findViewById(R.id.rootLayout);
                     InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -76,43 +108,60 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mWebsiteList = new ArrayList<>();
-        mWebsiteList.add(new Website("Facebook", R.drawable.ic_facebook, Color.parseColor("#3b5998")));
-        mWebsiteList.add(new Website("Instagram", R.drawable.ic_instagram, Color.parseColor("#ffdc80")));
-        mWebsiteList.add(new Website("Twitter", R.drawable.ic_twitter, Color.parseColor("#1da1f2")));
-        mWebsiteList.add(new Website("Youtube", R.drawable.ic_youtube, Color.parseColor("#ff0000")));
-        mWebsiteList.add(new Website("Pinterest", R.drawable.ic_pinterest, Color.parseColor("#bd081c")));
-        mWebsiteList.add(new Website("Spotify", R.drawable.ic_spotify, Color.parseColor("#1db954")));
-        mWebsiteList.add(new Website("Reddit", R.drawable.ic_reddit, Color.parseColor("#ff4500")));
-        mWebsiteList.add(new Website("Github", R.drawable.ic_github, Color.parseColor("#c9510c")));
-        mWebsiteList.add(new Website("Ebay", R.drawable.ic_ebay, Color.parseColor("#f5af02")));
-        mWebsiteList.add(new Website("Behance", R.drawable.ic_behance, Color.parseColor("#1769ff")));
-
-        RecyclerView recyclerView = findViewById(R.id.recyclerview_id);
-        RecyclerViewAdapter recyclerViewAdapter = new RecyclerViewAdapter(this, mWebsiteList);
-        recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
-        recyclerView.setAdapter(recyclerViewAdapter);
 
     }
 
-    private void requestingJsonFromApi(String url) {
+    private void requestingJsonFromApi(String url, final boolean isPinterest, final Website website, final RecyclerViewAdapter recyclerViewAdapter) {
+        final ProgressDialog progress = new ProgressDialog(this);
+        progress.setMessage("Loading...");
+        progress.setIndeterminate(false);
+        progress.setCancelable(false);
+        progress.show();
+
         AsyncHttpClient client = new AsyncHttpClient();
         client.get(url, new JsonHttpResponseHandler() {
 
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                //Log.d("jsondata", response.toString());
+                progress.dismiss();
+                if (mInterstitialAd.isLoaded()) {
+                    mInterstitialAd.show();
+                }
                 JsonData jsonData = JsonData.fromJson(response);
-                Log.d("jsondata", jsonData.toString());
+                if (!checkIfPossible(jsonData)) {
+                    changeBgImgViewToColor(website, Color.RED, recyclerViewAdapter);
+                }
+                else if(checkIfUsernameIsUsable(jsonData, isPinterest)){
+                    changeBgImgViewToColor(website, Color.GREEN, recyclerViewAdapter);
+                }
+                else {
+                    changeBgImgViewToColor(website, Color.WHITE, recyclerViewAdapter);
+                }
             }
 
             @Override
             public  void onFailure(int statusCode, Header[] headers, Throwable e, JSONObject response) {
-                Log.e("requesterror", e.toString());
-                Log.d("requesterror", "Status code " +statusCode);
-                Toast.makeText(MainActivity.this, "Request Failed check your internet", Toast.LENGTH_SHORT);
+                progress.dismiss();
+                if (mInterstitialAd.isLoaded()) {
+                    mInterstitialAd.show();
+                }
+                Toast.makeText(MainActivity.this, "Request Failed check your internet", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    public boolean checkIfUsernameIsUsable(JsonData jsonData, boolean isPinterest) {
+        if (isPinterest) return jsonData.getAvatar() == null;
+        else return jsonData.getStatus() != 200;
+    }
+
+    public boolean checkIfPossible(JsonData jsonData) {
+        return jsonData.getPossible();
+    }
+
+    public void changeBgImgViewToColor(Website website, int color, RecyclerViewAdapter recyclerViewAdapter) {
+        website.setBgColor(color);
+        recyclerViewAdapter.notifyDataSetChanged();
     }
 
 }

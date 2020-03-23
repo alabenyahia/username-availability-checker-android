@@ -13,6 +13,30 @@ public class JsonData {
     String url;
     Boolean usable;
 
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+    public Boolean getPossible() {
+        return possible;
+    }
+
+    public void setPossible(Boolean possible) {
+        this.possible = possible;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
     public static JsonData fromJson(JSONObject jsonObject) {
 
         JsonData jsonData = new JsonData();
